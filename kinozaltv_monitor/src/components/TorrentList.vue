@@ -130,9 +130,14 @@ export default {
           body: `url=${encodeURIComponent(this.torrentUrl)}`,
         });
 
-        if (!response.ok) {
+        // Check if 202 Accepted then show warning dialog
+        if (response.status === 202) {
           this.warningDialogVisible = true;
-          throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+          if (!response.ok) {
+            this.warningDialogVisible = true;
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
         }
 
         const data = await response.json();
