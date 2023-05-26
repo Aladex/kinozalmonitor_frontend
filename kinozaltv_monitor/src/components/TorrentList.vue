@@ -1,10 +1,11 @@
 <template>
-  <v-card class="mx-auto" max-width="1200">
+  <v-card class="mx-auto" max-width="1800">
     <v-card-title>Torrents</v-card-title>
     <v-card-text>
       <v-table>
         <thead>
         <tr>
+          <th class="text-left">Title</th>
           <th class="text-left">Name</th>
           <th class="text-left">HASH</th>
           <th class="text-left">Url</th>
@@ -13,6 +14,7 @@
         </thead>
         <tbody>
         <tr v-for="item in torrents" :key="item.id">
+          <td>{{ item.title }}</td>
           <td>{{ item.name }}</td>
           <td>{{ item.hash }}</td>
           <td>{{ item.url }}</td>
@@ -41,7 +43,10 @@
             <v-card-text>
               <v-form @submit.prevent="addTorrent">
                 <v-text-field v-model="torrentUrl" label="Torrent URL"></v-text-field>
-                <v-btn type="submit" color="primary">Add</v-btn>
+                <v-btn type="submit" color="primary" :disabled="loading">
+                  <v-progress-circular v-if="loading" indeterminate size="14" class="mr-2"></v-progress-circular>
+                  Add
+                </v-btn>
               </v-form>
             </v-card-text>
           </v-card>
@@ -49,6 +54,20 @@
       </v-btn>
     </v-card-actions>
   </v-card>
+  <v-dialog v-model="warningDialogVisible" max-width="400">
+    <v-card>
+      <v-card-title class="headline">Warning</v-card-title>
+      <v-card-text>
+        Мы попали под ограничение количества скачанных торрентов. Торрент будет добавлен позже автоматически.
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="green darken-1" text @click="warningDialogVisible = false">
+          OK
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -59,16 +78,19 @@ export default {
       torrents: [],
       dialogVisible: false,
       torrentUrl: "",
+      warningDialogVisible: false,
+      apiUrl: import.meta.env.VITE_BACKEND_API,
+      loading: false,
     };
   },
   methods: {
     async getTorrents() {
-      const response = await fetch("/api/torrents");
+      const response = await fetch(this.apiUrl + "api/torrents");
       this.torrents = await response.json();
     },
     async deleteTorrent(item) {
       try {
-        const response = await fetch("/api/remove", {
+        const response = await fetch(this.apiUrl + "api/remove", {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json"
@@ -99,7 +121,8 @@ export default {
     },
     async addTorrent() {
       try {
-        const response = await fetch("/api/add", {
+        this.loading = true;
+        const response = await fetch(this.apiUrl + "api/add", {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -108,6 +131,7 @@ export default {
         });
 
         if (!response.ok) {
+          this.warningDialogVisible = true;
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
@@ -121,6 +145,9 @@ export default {
         }
       } catch (error) {
         console.error("Error: ", error);
+      } finally {
+        this.loading = false;
+        this.getTorrents();
       }
 
       // Сбросить значение поля URL и закрыть диалоговое окно
