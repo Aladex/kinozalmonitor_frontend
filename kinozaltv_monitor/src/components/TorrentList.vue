@@ -8,16 +8,14 @@
           <th class="text-left">Title</th>
           <th class="text-left">Name</th>
           <th class="text-left">HASH</th>
-          <th class="text-left">Url</th>
           <th>Actions</th>
         </tr>
         </thead>
         <tbody>
         <tr v-for="item in torrents" :key="item.id">
-          <td>{{ item.title }}</td>
+          <td><a :href="item.url">{{ item.title }}</a> </td>
           <td>{{ item.name }}</td>
           <td>{{ item.hash }}</td>
-          <td>{{ item.url }}</td>
           <td>
             <v-btn color="primary" text @click="deleteTorrent(item)">
               Delete
@@ -68,6 +66,20 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="errorDialogVisible" max-width="400">
+    <v-card>
+      <v-card-title class="headline">Error</v-card-title>
+      <v-card-text>
+        Что-то пошло не так. Возможно, линк неверный.
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="green darken-1" text @click="errorDialogVisible = false">
+          OK
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -79,6 +91,7 @@ export default {
       dialogVisible: false,
       torrentUrl: "",
       warningDialogVisible: false,
+      errorDialogVisible: false,
       apiUrl: import.meta.env.VITE_BACKEND_API,
       loading: false,
     };
@@ -135,7 +148,7 @@ export default {
           this.warningDialogVisible = true;
         } else {
           if (!response.ok) {
-            this.warningDialogVisible = true;
+            this.errorDialogVisible = true;
             throw new Error(`HTTP error! status: ${response.status}`);
           }
         }
