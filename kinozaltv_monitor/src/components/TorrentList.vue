@@ -1,7 +1,7 @@
 <template>
 
   <v-card class="mx-auto" max-width="1800">
-    <v-card-title>Torrents {{ loading }}</v-card-title>
+    <v-card-title>Torrents</v-card-title>
     <v-card-text>
       <v-table>
         <thead>
