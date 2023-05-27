@@ -1,12 +1,12 @@
 <template>
+
   <v-card class="mx-auto" max-width="1800">
-    <v-card-title>Torrents</v-card-title>
+    <v-card-title>Torrents {{ loading }}</v-card-title>
     <v-card-text>
       <v-table>
         <thead>
         <tr>
           <th class="text-left">Title</th>
-          <th class="text-left">Name</th>
           <th class="text-left">HASH</th>
           <th>Actions</th>
         </tr>
@@ -14,7 +14,6 @@
         <tbody>
         <tr v-for="item in torrents" :key="item.id">
           <td><a :href="item.url">{{ item.title }}</a> </td>
-          <td>{{ item.name }}</td>
           <td>{{ item.hash }}</td>
           <td>
             <v-btn color="primary" text @click="deleteTorrent(item)">
@@ -52,6 +51,13 @@
       </v-btn>
     </v-card-actions>
   </v-card>
+  <v-overlay
+    v-model="loading"
+    absolute="true"
+    class="align-center justify-center"
+  >
+    <v-progress-circular indeterminate size="64"></v-progress-circular>
+  </v-overlay>
   <v-dialog v-model="warningDialogVisible" max-width="400">
     <v-card>
       <v-card-title class="headline">Warning</v-card-title>
@@ -78,8 +84,10 @@
           OK
         </v-btn>
       </v-card-actions>
+
     </v-card>
   </v-dialog>
+
 </template>
 
 <script>
@@ -144,37 +152,46 @@ export default {
         });
 
         // Check if 202 Accepted then show warning dialog
-        if (response.status === 202) {
-          this.warningDialogVisible = true;
-        } else {
-          if (!response.ok) {
-            this.errorDialogVisible = true;
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-        }
 
-        const data = await response.json();
-
-        if (data.status === "ok") {
-          // Обновить список торрентов после успешного добавления
-          this.getTorrents();
-        } else {
-          console.error("Error adding torrent: ", data.error);
+        if (!response.ok) {
+          this.errorDialogVisible = true;
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
       } catch (error) {
         console.error("Error: ", error);
+        this.loading = false; // turn off the loading indicator because an error occurred
       } finally {
-        this.loading = false;
-        this.getTorrents();
+        this.dialogVisible = false; // close the dialog
+        this.torrentUrl = ""; // reset the URL field
       }
-
-      // Сбросить значение поля URL и закрыть диалоговое окно
-      this.torrentUrl = "";
-      this.dialogVisible = false;
     },
   },
   mounted() {
     this.getTorrents();
+
+    // Create WebSocket url from the current url if it's not set in .env
+    this.wsUrl = import.meta.env.VITE_BACKEND_WS || `ws://${window.location.host}/ws`;
+
+    // if https then use wss
+    if (window.location.protocol === "https:") {
+      this.wsUrl = this.wsUrl.replace("ws:", "wss:");
+    }
+
+    this.socket = new WebSocket(this.wsUrl);
+
+    // Connection opened
+    this.socket.onmessage = (event) => {
+      const msg = event.data;
+
+      // if something was added then update the list of torrents
+      if (msg === "added") {
+        this.loading = false;
+        this.getTorrents();
+      } else if (msg === "500") {
+        this.loading = false;
+        this.errorDialogVisible = true;
+      }
+    };
   },
 };
 </script>
