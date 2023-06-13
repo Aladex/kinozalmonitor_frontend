@@ -40,6 +40,13 @@
             <v-card-text>
               <v-form @submit.prevent="addTorrent">
                 <v-text-field v-model="torrentUrl" label="Torrent URL"></v-text-field>
+                <v-select
+                  v-model="selectedDownloadPath"
+                  :items="downloadPaths"
+                  label="Download path"
+                  item-text="path"
+                  item-value="path"
+                ></v-select>
                 <v-btn type="submit" color="primary" :disabled="loading">
                   <v-progress-circular v-if="loading" indeterminate size="14" class="mr-2"></v-progress-circular>
                   Add
@@ -102,12 +109,18 @@ export default {
       errorDialogVisible: false,
       apiUrl: import.meta.env.VITE_BACKEND_API,
       loading: false,
+      downloadPaths: [],
+      selectedDownloadPath: null,
     };
   },
   methods: {
     async getTorrents() {
       const response = await fetch(this.apiUrl + "api/torrents");
       this.torrents = await response.json();
+    },
+    async getDownloadPaths() {
+      const response = await fetch(this.apiUrl + "api/download-paths");
+      this.downloadPaths = await response.json();
     },
     async deleteTorrent(item) {
       try {
@@ -148,7 +161,7 @@ export default {
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
           },
-          body: `url=${encodeURIComponent(this.torrentUrl)}`,
+          body: `url=${encodeURIComponent(this.torrentUrl)}&downloadPath=${encodeURIComponent(this.selectedDownloadPath.path)}`,
         });
 
         // Check if 202 Accepted then show warning dialog
@@ -192,6 +205,15 @@ export default {
         this.errorDialogVisible = true;
       }
     };
+  },
+  watch: {
+    dialogVisible(val) {
+      if (!val) {
+        this.torrentUrl = "";
+      } else {
+        this.getDownloadPaths();
+      }
+    },
   },
 };
 </script>
