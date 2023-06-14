@@ -46,6 +46,7 @@
                   label="Download path"
                   item-text="path"
                   item-value="path"
+                  :required="isDownloadPathRequired"
                 ></v-select>
                 <v-btn type="submit" color="primary" :disabled="loading">
                   <v-progress-circular v-if="loading" indeterminate size="14" class="mr-2"></v-progress-circular>
@@ -113,6 +114,11 @@ export default {
       selectedDownloadPath: null,
     };
   },
+  computed: {
+    isDownloadPathRequired() {
+      return this.downloadPaths.length === 0;
+    }
+  },
   methods: {
     async getTorrents() {
       const response = await fetch(this.apiUrl + "api/torrents");
@@ -154,31 +160,45 @@ export default {
       this.getTorrents();
     },
     async addTorrent() {
+      if (this.isDownloadPathRequired && this.selectedDownloadPath === "") {
+        this.errorDialogVisible = true;
+        throw new Error("Download path is required");
+      }
       try {
         this.loading = true;
+        const payload = {
+          url: this.torrentUrl,
+          downloadPath: this.selectedDownloadPath
+        };
+
         const response = await fetch(this.apiUrl + "api/add", {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
           },
-          body: `url=${encodeURIComponent(this.torrentUrl)}&downloadPath=${encodeURIComponent(this.selectedDownloadPath.path)}`,
+          body: JSON.stringify(payload),
         });
 
-        // Check if 202 Accepted then show warning dialog
-
         if (!response.ok) {
-          this.errorDialogVisible = true;
           throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.status !== 'ok') {
+          this.errorDialogVisible = true;
+          console.error("Error adding torrent: ", data.error);
         }
       } catch (error) {
         console.error("Error: ", error);
-        this.loading = false; // turn off the loading indicator because an error occurred
+        this.errorDialogVisible = true;
       } finally {
-        this.dialogVisible = false; // close the dialog
-        this.torrentUrl = ""; // reset the URL field
+        this.loading = false;
+        this.dialogVisible = false;
+        this.torrentUrl = "";
+        this.getTorrents();
       }
     },
-  },
+
   mounted() {
     this.getTorrents();
 
