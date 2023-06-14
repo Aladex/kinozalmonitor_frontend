@@ -127,6 +127,10 @@ export default {
     async getDownloadPaths() {
       const response = await fetch(this.apiUrl + "api/download-paths");
       this.downloadPaths = await response.json();
+      // Set the first path as selected
+      if (this.downloadPaths.length > 0) {
+        this.selectedDownloadPath = this.downloadPaths[0];
+      }
     },
     async deleteTorrent(item) {
       try {
@@ -198,7 +202,7 @@ export default {
         this.getTorrents();
       }
     },
-
+  },
   mounted() {
     this.getTorrents();
 
