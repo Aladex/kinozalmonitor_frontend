@@ -1,28 +1,33 @@
 <template>
-
   <v-card class="mx-auto" max-width="1800">
     <v-card-title>Torrents</v-card-title>
     <v-card-text>
-      <v-table>
-        <thead>
-        <tr>
-          <th class="text-left">Title</th>
-          <th class="text-left">HASH</th>
-          <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="item in torrents" :key="item.id">
-          <td><a :href="item.url">{{ item.title }}</a> </td>
-          <td>{{ item.hash }}</td>
-          <td>
-            <v-btn color="primary" text @click="deleteTorrent(item)">
-              Delete
-            </v-btn>
-          </td>
-        </tr>
-        </tbody>
-      </v-table>
+      <v-banner
+        v-for="torrent in torrents"
+        :key="torrent.id"
+      >
+        <v-banner-text>
+          <v-row>
+            <v-col cols="4" sm="4" md="4" lg="4">
+              <div class="align-left">
+                <a :href="torrent.url">{{ torrent.title }}</a>
+              </div>
+            </v-col>
+            <v-col cols="4" sm="4" md="4" lg="4">
+              <div class="align-center">
+                <p>{{ torrent.hash }}</p>
+              </div>
+            </v-col>
+            <v-col cols="4" sm="4" md="4" lg="4">
+              <div class="align-right">
+                <v-btn color="primary" text @click="deleteTorrent(torrent)">
+                  Delete
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-banner-text>
+      </v-banner>
     </v-card-text>
     <v-card-actions>
       <v-btn
@@ -241,3 +246,15 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.align-left {
+  text-align: left;
+}
+.align-center {
+  text-align: center;
+}
+.align-right {
+  text-align: right;
+}
+</style>
