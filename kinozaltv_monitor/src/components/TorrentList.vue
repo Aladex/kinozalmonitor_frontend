@@ -1,6 +1,7 @@
 <template>
   <v-card class="mx-auto" max-width="1800">
-    <v-card-title>Torrents</v-card-title>
+    <v-card-title><v-icon>mdi-download</v-icon>
+      Torrents</v-card-title>
     <v-card-text>
       <v-banner
         v-for="torrent in torrents"
@@ -8,19 +9,19 @@
       >
         <v-banner-text>
           <v-row>
-            <v-col cols="4" sm="4" md="4" lg="4">
+            <v-col cols="12" sm="12" md="4" lg="4">
               <div class="align-left">
                 <a :href="torrent.url">{{ torrent.title }}</a>
               </div>
             </v-col>
-            <v-col cols="4" sm="4" md="4" lg="4">
+            <v-col cols="12" sm="12" md="4" lg="4">
               <div class="align-center">
-                <p>{{ torrent.hash }}</p>
+                <p>Hash: {{ torrent.hash }}</p>
               </div>
             </v-col>
-            <v-col cols="1" sm="1" md="1" lg="1">
-              <div class="align-right">
+            <v-col cols="12" sm="12" md="1" lg="1">
                 <v-select
+                  class="align-center"
                   v-model="torrent.watch_every"
                   :items="watchEveryOptions"
                   label="Watch every"
@@ -28,12 +29,10 @@
                   variant="underlined"
                   @update:modelValue="updateWatchEvery(torrent)"
                 ></v-select>
-
-              </div>
             </v-col>
-            <v-col cols="3" sm="3" md="3" lg="3">
+            <v-col cols="12" sm="12" md="3" lg="3">
               <div class="align-right">
-                <v-btn color="primary" text @click="deleteTorrent(torrent)">
+                <v-btn color="primary" @click="deleteTorrent(torrent)">
                   Delete
                 </v-btn>
               </div>
