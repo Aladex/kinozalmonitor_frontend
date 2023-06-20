@@ -18,7 +18,20 @@
                 <p>{{ torrent.hash }}</p>
               </div>
             </v-col>
-            <v-col cols="4" sm="4" md="4" lg="4">
+            <v-col cols="1" sm="1" md="1" lg="1">
+              <div class="align-right">
+                <v-select
+                  v-model="torrent.watch_every"
+                  :items="watchEveryOptions"
+                  label="Watch every"
+                  item-value="item"
+                  variant="underlined"
+                  @update:modelValue="updateWatchEvery(torrent)"
+                ></v-select>
+
+              </div>
+            </v-col>
+            <v-col cols="3" sm="3" md="3" lg="3">
               <div class="align-right">
                 <v-btn color="primary" text @click="deleteTorrent(torrent)">
                   Delete
@@ -122,12 +135,54 @@ export default {
   computed: {
     isDownloadPathRequired() {
       return this.downloadPaths.length === 0;
+    },
+    // In minutes
+    watchEveryOptions() {
+      // Create list of options from 10 to 240 minutes with step 30 minutes
+      const options = ["-"];
+      for (let i = 10; i <= 240; i += 30) {
+        options.push(i.toString());
+      }
+      return options;
     }
   },
   methods: {
+    async updateWatchEvery(torrent) {
+      // Convert "-" back to 0 for API
+      const watchPeriod = torrent.watch_every === "-" ? "0" : torrent.watch_every;
+      try {
+        const response = await fetch(this.apiUrl + "api/watch", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url: torrent.url,
+            watchPeriod: watchPeriod,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.status !== 'ok') {
+          console.error("Error setting watch flag: ", data.error);
+        }
+      } catch (error) {
+        console.error("Error: ", error);
+      }
+    },
     async getTorrents() {
       const response = await fetch(this.apiUrl + "api/torrents");
       this.torrents = await response.json();
+      // Iterate over torrents and set the watchEvery value to "-" if it's === 0
+      this.torrents.forEach((torrent) => {
+        if (torrent.watch_every === 0) {
+          torrent.watch_every = "-";
+        }
+      });
     },
     async getDownloadPaths() {
       const response = await fetch(this.apiUrl + "api/download-paths");
